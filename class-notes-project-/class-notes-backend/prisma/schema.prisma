@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Class {
+  id        Int        @id @default(autoincrement())
+  name      String
+  color     String?    // ← THIS MUST EXIST
+  documents Document[]
+  resources Resource[]
+
+}
+
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  title     String
+  fileUrl   String?
+  classId   Int
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+
+model Resource {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  classId   Int
+  class     Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+}
