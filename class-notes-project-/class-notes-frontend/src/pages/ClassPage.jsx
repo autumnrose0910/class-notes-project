@@ -42,20 +42,29 @@ function ClassPage({ isAdmin }) {
   }
 
   /* ===========================
-     FETCH DATA
+     FETCH CLASS
   =========================== */
 
   useEffect(() => {
     const fetchClass = async () => {
       try {
         const res = await fetch(`${API_URL}/classes/${id}`)
+        if (!res.ok) throw new Error()
         const data = await res.json()
-        setClassName(data?.name || "Class")
+        setClassName(data.name)
       } catch {
-        setClassName("Class")
+        setClassName("Untitled Class")
       }
     }
 
+    fetchClass()
+  }, [id])
+
+  /* ===========================
+     FETCH DOCUMENTS
+  =========================== */
+
+  useEffect(() => {
     const fetchDocuments = async () => {
       const url = searchQuery
         ? `${API_URL}/documents/search?q=${encodeURIComponent(searchQuery)}&classId=${id}`
@@ -70,6 +79,14 @@ function ClassPage({ isAdmin }) {
       }
     }
 
+    fetchDocuments()
+  }, [id, searchQuery])
+
+  /* ===========================
+     FETCH RESOURCES
+  =========================== */
+
+  useEffect(() => {
     const fetchResources = async () => {
       try {
         const res = await fetch(`${API_URL}/resources?classId=${id}`)
@@ -80,10 +97,8 @@ function ClassPage({ isAdmin }) {
       }
     }
 
-    fetchClass()
-    fetchDocuments()
     fetchResources()
-  }, [id, searchQuery])
+  }, [id])
 
   /* ===========================
      UPLOAD DOCUMENT
@@ -195,19 +210,23 @@ function ClassPage({ isAdmin }) {
       />
 
       <div className="max-w-7xl mx-auto pl-24">
-        <h1 className="text-5xl text-mocha mb-6">{className}</h1>
+        {/* MAIN TITLE */}
+        <h1 className="font-serifDisplay text-5xl text-mocha mb-6">
+          {className}
+        </h1>
 
         <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
 
           {/* SIDEBAR */}
           <div className="bg-white rounded-3xl p-6 shadow-soft border border-butter h-fit">
 
-            <h2 className="text-xl text-mocha mb-4">Files</h2>
+            <h2 className="font-serifDisplay text-xl text-mocha mb-4">
+              Files
+            </h2>
 
             {/* Upload Section */}
             {isAdmin && (
               <div className="mb-6 space-y-3">
-
                 <input
                   type="file"
                   id="fileUpload"
@@ -216,7 +235,7 @@ function ClassPage({ isAdmin }) {
                     const file = e.target.files[0]
                     if (!file) return
                     setSelectedFile(file)
-                    setNewTitle(file.name.replace(/\.[^/.]+$/, "")) // default title without extension
+                    setNewTitle(file.name.replace(/\.[^/.]+$/, ""))
                   }}
                 />
 
@@ -262,7 +281,6 @@ function ClassPage({ isAdmin }) {
               </div>
             )}
 
-            {/* Search */}
             <input
               type="text"
               placeholder="Search..."
@@ -278,27 +296,14 @@ function ClassPage({ isAdmin }) {
                   onClick={() => setSelectedDoc(doc)}
                   className="cursor-pointer px-4 py-3 rounded-xl hover:bg-sand"
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="truncate text-sm">{doc.title}</span>
-                    {isAdmin && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteDoc(doc.id)
-                        }}
-                        className="text-xs text-red-500"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+                  <span className="truncate text-sm">{doc.title}</span>
                 </div>
               ))}
             </div>
 
             {/* RESOURCES */}
             <div className="mt-8 pt-6 border-t border-sand">
-              <h2 className="text-xl text-mocha mb-4">
+              <h2 className="font-serifDisplay text-xl text-mocha mb-4">
                 Recommended Resources
               </h2>
 
@@ -344,18 +349,15 @@ function ClassPage({ isAdmin }) {
           {/* VIEWER */}
           <div className="bg-white rounded-3xl p-8 shadow-soft border border-butter">
             {selectedDoc ? (
-              <>
-                {getFileType(selectedDoc.fileUrl) === "pdf" && (
-                  <PDFviewer fileUrl={selectedDoc.fileUrl} />
-                )}
-                {["png", "jpg", "jpeg"].includes(getFileType(selectedDoc.fileUrl)) && (
-                  <img
-                    src={selectedDoc.fileUrl}
-                    alt={selectedDoc.title}
-                    className="w-full"
-                  />
-                )}
-              </>
+              getFileType(selectedDoc.fileUrl) === "pdf" ? (
+                <PDFviewer fileUrl={selectedDoc.fileUrl} />
+              ) : (
+                <img
+                  src={selectedDoc.fileUrl}
+                  alt={selectedDoc.title}
+                  className="w-full"
+                />
+              )
             ) : (
               <div className="text-center text-latte">
                 Select a file to view
@@ -370,3 +372,4 @@ function ClassPage({ isAdmin }) {
 }
 
 export default ClassPage
+
