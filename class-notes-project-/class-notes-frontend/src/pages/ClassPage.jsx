@@ -61,9 +61,7 @@ function ClassPage({ isAdmin }) {
 
   const fetchDocuments = async () => {
     const url = searchQuery
-      ? `${API_URL}/documents/search?q=${encodeURIComponent(
-          searchQuery
-        )}&classId=${id}`
+      ? `${API_URL}/documents/search?q=${encodeURIComponent(searchQuery)}&classId=${id}`
       : `${API_URL}/documents?classId=${id}`
 
     try {
@@ -186,11 +184,7 @@ function ClassPage({ isAdmin }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title,
-          url,
-          classId: id,
-        }),
+        body: JSON.stringify({ title, url, classId: id }),
       })
 
       if (!res.ok) throw new Error("Create resource failed")
@@ -233,7 +227,7 @@ function ClassPage({ isAdmin }) {
   =========================== */
 
   return (
-    <div className="min-h-screen bg-cream px-6 py-10 transition-all duration-300">
+    <div className="min-h-screen bg-cream px-6 py-10">
       <img
         src="/mascot.png"
         alt="Mascot"
@@ -242,12 +236,41 @@ function ClassPage({ isAdmin }) {
       />
 
       <div className="max-w-7xl mx-auto pl-24">
-        <h1 className="text-5xl text-mocha mb-2">{className}</h1>
+        <h1 className="text-5xl text-mocha mb-6">{className}</h1>
 
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr] mt-10">
+        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+
           {/* SIDEBAR */}
           <div className="bg-white rounded-3xl p-6 shadow-soft border border-butter h-fit">
+
             <h2 className="text-xl text-mocha mb-4">Files</h2>
+
+            {/* UPLOAD (Admin Only) */}
+            {isAdmin && (
+              <div className="mb-6 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Document title"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-xl"
+                />
+
+                <input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files[0])}
+                  className="w-full text-sm"
+                />
+
+                <button
+                  onClick={handleUpload}
+                  disabled={submitting}
+                  className="w-full bg-peach px-4 py-2 rounded-xl"
+                >
+                  {submitting ? "Uploading..." : "Upload File"}
+                </button>
+              </div>
+            )}
 
             <input
               type="text"
@@ -282,60 +305,6 @@ function ClassPage({ isAdmin }) {
               ))}
             </div>
 
-            {/* RESOURCES */}
-            <div className="mt-8 pt-6 border-t border-sand">
-              <h2 className="text-xl text-mocha mb-4">
-                Recommended Resources
-              </h2>
-
-              {resources.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex justify-between items-center mb-2"
-                >
-                  <a
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-mocha underline truncate"
-                  >
-                    {r.title}
-                  </a>
-
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleDeleteResource(r.id)}
-                      className="text-xs text-red-500"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              {isAdmin && (
-                <div className="mt-4 space-y-2">
-                  <input
-                    placeholder="Title"
-                    value={newResourceTitle}
-                    onChange={(e) => setNewResourceTitle(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-xl"
-                  />
-                  <input
-                    placeholder="https://..."
-                    value={newResourceUrl}
-                    onChange={(e) => setNewResourceUrl(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-xl"
-                  />
-                  <button
-                    onClick={handleAddResource}
-                    className="w-full bg-peach px-4 py-2 rounded-xl"
-                  >
-                    Add Resource
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* VIEWER */}
@@ -346,20 +315,12 @@ function ClassPage({ isAdmin }) {
                   <PDFviewer fileUrl={selectedDoc.fileUrl} />
                 )}
 
-                {["png", "jpg", "jpeg"].includes(
-                  getFileType(selectedDoc.fileUrl)
-                ) && (
+                {["png", "jpg", "jpeg"].includes(getFileType(selectedDoc.fileUrl)) && (
                   <img
                     src={selectedDoc.fileUrl}
                     alt={selectedDoc.title}
                     className="w-full"
                   />
-                )}
-
-                {getFileType(selectedDoc.fileUrl) === "mp4" && (
-                  <video controls className="w-full">
-                    <source src={selectedDoc.fileUrl} type="video/mp4" />
-                  </video>
                 )}
               </>
             ) : (
@@ -368,6 +329,7 @@ function ClassPage({ isAdmin }) {
               </div>
             )}
           </div>
+
         </div>
       </div>
     </div>
@@ -375,3 +337,4 @@ function ClassPage({ isAdmin }) {
 }
 
 export default ClassPage
+
