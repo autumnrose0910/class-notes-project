@@ -11,7 +11,8 @@ function ClassPage({ isAdmin }) {
   const [documents, setDocuments] = useState([])
   const [selectedDoc, setSelectedDoc] = useState(null)
 
-  const [file, setFile] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [newTitle, setNewTitle] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
@@ -41,106 +42,85 @@ function ClassPage({ isAdmin }) {
   }
 
   /* ===========================
-     FETCH CLASS
-  =========================== */
-
-  const fetchClass = async () => {
-    try {
-      const res = await fetch(`${API_URL}/classes/${id}`)
-      const data = await res.json()
-      setClassName(data?.name || "Class")
-    } catch {
-      setClassName("Class")
-    }
-  }
-
-  /* ===========================
-     FETCH DOCUMENTS
-  =========================== */
-
-  const fetchDocuments = async () => {
-    const url = searchQuery
-      ? `${API_URL}/documents/search?q=${encodeURIComponent(searchQuery)}&classId=${id}`
-      : `${API_URL}/documents?classId=${id}`
-
-    try {
-      const res = await fetch(url)
-      const data = await res.json()
-      setDocuments(data)
-    } catch (err) {
-      console.error("Fetch documents error:", err)
-    }
-  }
-
-  /* ===========================
-     FETCH RESOURCES
-  =========================== */
-
-  const fetchResources = async () => {
-    try {
-      const res = await fetch(`${API_URL}/resources?classId=${id}`)
-      const data = await res.json()
-      setResources(data)
-    } catch (err) {
-      console.error("Fetch resources error:", err)
-    }
-  }
-
-  useEffect(() => {
-    fetchClass()
-  }, [id])
-
-  useEffect(() => {
-    fetchDocuments()
-  }, [id, searchQuery])
-
-  useEffect(() => {
-    fetchResources()
-  }, [id])
-
-  /* ===========================
-     AUTO UPLOAD WHEN FILE SELECTED
+     FETCH DATA
   =========================== */
 
   useEffect(() => {
-    if (!file || !isAdmin) return
-
-    const uploadFile = async () => {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("title", file.name)
-      formData.append("classId", id)
-
-      setSubmitting(true)
-
+    const fetchClass = async () => {
       try {
-        const res = await fetch(`${API_URL}/documents/upload`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        })
-
-        if (!res.ok) throw new Error("Upload failed")
-
-        const doc = await res.json()
-        setDocuments((prev) => [doc, ...prev])
-        setFile(null)
-      } catch (err) {
-        console.error("Upload error:", err)
-        alert("Upload failed — make sure you're logged in as admin.")
-      } finally {
-        setSubmitting(false)
+        const res = await fetch(`${API_URL}/classes/${id}`)
+        const data = await res.json()
+        setClassName(data?.name || "Class")
+      } catch {
+        setClassName("Class")
       }
     }
 
-    uploadFile()
-  }, [file])
+    const fetchDocuments = async () => {
+      const url = searchQuery
+        ? `${API_URL}/documents/search?q=${encodeURIComponent(searchQuery)}&classId=${id}`
+        : `${API_URL}/documents?classId=${id}`
+
+      try {
+        const res = await fetch(url)
+        const data = await res.json()
+        setDocuments(data)
+      } catch (err) {
+        console.error("Fetch documents error:", err)
+      }
+    }
+
+    const fetchResources = async () => {
+      try {
+        const res = await fetch(`${API_URL}/resources?classId=${id}`)
+        const data = await res.json()
+        setResources(data)
+      } catch (err) {
+        console.error("Fetch resources error:", err)
+      }
+    }
+
+    fetchClass()
+    fetchDocuments()
+    fetchResources()
+  }, [id, searchQuery])
 
   /* ===========================
-     DELETE DOCUMENT
+     UPLOAD DOCUMENT
   =========================== */
+
+  const handleUpload = async () => {
+    if (!isAdmin || !selectedFile || !newTitle.trim()) return
+
+    const formData = new FormData()
+    formData.append("file", selectedFile)
+    formData.append("title", newTitle.trim())
+    formData.append("classId", id)
+
+    setSubmitting(true)
+
+    try {
+      const res = await fetch(`${API_URL}/documents/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error("Upload failed")
+
+      const doc = await res.json()
+      setDocuments((prev) => [doc, ...prev])
+      setSelectedFile(null)
+      setNewTitle("")
+    } catch (err) {
+      console.error("Upload error:", err)
+      alert("Upload failed — make sure you're logged in as admin.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const handleDeleteDoc = async (docId) => {
     if (!isAdmin || !confirm("Delete this document?")) return
@@ -148,9 +128,7 @@ function ClassPage({ isAdmin }) {
     try {
       await fetch(`${API_URL}/documents/${docId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       setDocuments((prev) => prev.filter((d) => d.id !== docId))
@@ -204,27 +182,6 @@ function ClassPage({ isAdmin }) {
   }
 
   /* ===========================
-     DELETE RESOURCE
-  =========================== */
-
-  const handleDeleteResource = async (resourceId) => {
-    if (!isAdmin || !confirm("Delete this resource?")) return
-
-    try {
-      await fetch(`${API_URL}/resources/${resourceId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      setResources((prev) => prev.filter((r) => r.id !== resourceId))
-    } catch (err) {
-      console.error("Delete resource error:", err)
-    }
-  }
-
-  /* ===========================
      RENDER
   =========================== */
 
@@ -234,7 +191,7 @@ function ClassPage({ isAdmin }) {
         src="/mascot.png"
         alt="Mascot"
         onClick={() => navigate("/")}
-        className="fixed top-6 left-6 w-20 h-auto cursor-pointer z-50"
+        className="fixed top-6 left-6 w-20 cursor-pointer z-50"
       />
 
       <div className="max-w-7xl mx-auto pl-24">
@@ -247,28 +204,65 @@ function ClassPage({ isAdmin }) {
 
             <h2 className="text-xl text-mocha mb-4">Files</h2>
 
-            {/* Upload Button */}
+            {/* Upload Section */}
             {isAdmin && (
-              <div className="mb-6">
+              <div className="mb-6 space-y-3">
+
                 <input
                   type="file"
                   id="fileUpload"
                   className="hidden"
                   onChange={(e) => {
-                    const selected = e.target.files[0]
-                    if (selected) setFile(selected)
+                    const file = e.target.files[0]
+                    if (!file) return
+                    setSelectedFile(file)
+                    setNewTitle(file.name.replace(/\.[^/.]+$/, "")) // default title without extension
                   }}
                 />
 
-                <button
-                  onClick={() => document.getElementById("fileUpload").click()}
-                  className="w-full bg-peach px-4 py-2 rounded-xl"
-                >
-                  {submitting ? "Uploading..." : "Upload File"}
-                </button>
+                {!selectedFile && (
+                  <button
+                    onClick={() => document.getElementById("fileUpload").click()}
+                    className="w-full bg-peach px-4 py-2 rounded-xl"
+                  >
+                    Upload File
+                  </button>
+                )}
+
+                {selectedFile && (
+                  <>
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-xl"
+                    />
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpload}
+                        disabled={submitting}
+                        className="flex-1 bg-peach px-4 py-2 rounded-xl"
+                      >
+                        {submitting ? "Uploading..." : "Confirm Upload"}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedFile(null)
+                          setNewTitle("")
+                        }}
+                        className="flex-1 bg-sand px-4 py-2 rounded-xl"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
+            {/* Search */}
             <input
               type="text"
               placeholder="Search..."
@@ -309,24 +303,15 @@ function ClassPage({ isAdmin }) {
               </h2>
 
               {resources.map((r) => (
-                <div key={r.id} className="flex justify-between items-center mb-2">
+                <div key={r.id} className="mb-2">
                   <a
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-mocha underline truncate"
+                    className="text-sm text-mocha underline"
                   >
                     {r.title}
                   </a>
-
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleDeleteResource(r.id)}
-                      className="text-xs text-red-500"
-                    >
-                      ✕
-                    </button>
-                  )}
                 </div>
               ))}
 
@@ -363,7 +348,6 @@ function ClassPage({ isAdmin }) {
                 {getFileType(selectedDoc.fileUrl) === "pdf" && (
                   <PDFviewer fileUrl={selectedDoc.fileUrl} />
                 )}
-
                 {["png", "jpg", "jpeg"].includes(getFileType(selectedDoc.fileUrl)) && (
                   <img
                     src={selectedDoc.fileUrl}
@@ -386,5 +370,3 @@ function ClassPage({ isAdmin }) {
 }
 
 export default ClassPage
-
-
