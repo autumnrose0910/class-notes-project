@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import API_URL from "../api"
+
 
 function Home({ isAdmin }) {
   const [classes, setClasses] = useState([])
@@ -24,7 +26,7 @@ function Home({ isAdmin }) {
   ]
 
   const fetchClasses = async () => {
-    const res = await fetch("http://localhost:3001/classes")
+    const res = await fetch('${API_URL}/classes')
     const data = await res.json()
     setClasses(data)
   }
@@ -40,7 +42,7 @@ function Home({ isAdmin }) {
   const handleCreateClass = async () => {
     if (!isAdmin || !newClassName.trim()) return
 
-    const res = await fetch("http://localhost:3001/classes", {
+    const res = await fetch(`${API_URL}/classes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
