@@ -11,7 +11,6 @@ function ClassPage({ isAdmin }) {
   const [documents, setDocuments] = useState([])
   const [selectedDoc, setSelectedDoc] = useState(null)
 
-  const [newTitle, setNewTitle] = useState("")
   const [file, setFile] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -100,41 +99,44 @@ function ClassPage({ isAdmin }) {
   }, [id])
 
   /* ===========================
-     UPLOAD DOCUMENT
+     AUTO UPLOAD WHEN FILE SELECTED
   =========================== */
 
-  const handleUpload = async () => {
-    if (!isAdmin || !newTitle || !file) return
+  useEffect(() => {
+    if (!file || !isAdmin) return
 
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("title", newTitle)
-    formData.append("classId", id)
+    const uploadFile = async () => {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("title", file.name)
+      formData.append("classId", id)
 
-    setSubmitting(true)
+      setSubmitting(true)
 
-    try {
-      const res = await fetch(`${API_URL}/documents/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      })
+      try {
+        const res = await fetch(`${API_URL}/documents/upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
 
-      if (!res.ok) throw new Error("Upload failed")
+        if (!res.ok) throw new Error("Upload failed")
 
-      const doc = await res.json()
-      setDocuments((prev) => [doc, ...prev])
-      setNewTitle("")
-      setFile(null)
-    } catch (err) {
-      console.error("Upload error:", err)
-      alert("Upload failed — make sure you're logged in as admin.")
-    } finally {
-      setSubmitting(false)
+        const doc = await res.json()
+        setDocuments((prev) => [doc, ...prev])
+        setFile(null)
+      } catch (err) {
+        console.error("Upload error:", err)
+        alert("Upload failed — make sure you're logged in as admin.")
+      } finally {
+        setSubmitting(false)
+      }
     }
-  }
+
+    uploadFile()
+  }, [file])
 
   /* ===========================
      DELETE DOCUMENT
@@ -245,26 +247,21 @@ function ClassPage({ isAdmin }) {
 
             <h2 className="text-xl text-mocha mb-4">Files</h2>
 
-            {/* UPLOAD (Admin Only) */}
+            {/* Upload Button */}
             {isAdmin && (
-              <div className="mb-6 space-y-3">
-                <input
-                  type="text"
-                  placeholder="Document title"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl"
-                />
-
+              <div className="mb-6">
                 <input
                   type="file"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  className="w-full text-sm"
+                  id="fileUpload"
+                  className="hidden"
+                  onChange={(e) => {
+                    const selected = e.target.files[0]
+                    if (selected) setFile(selected)
+                  }}
                 />
 
                 <button
-                  onClick={handleUpload}
-                  disabled={submitting}
+                  onClick={() => document.getElementById("fileUpload").click()}
                   className="w-full bg-peach px-4 py-2 rounded-xl"
                 >
                   {submitting ? "Uploading..." : "Upload File"}
@@ -305,6 +302,58 @@ function ClassPage({ isAdmin }) {
               ))}
             </div>
 
+            {/* RESOURCES */}
+            <div className="mt-8 pt-6 border-t border-sand">
+              <h2 className="text-xl text-mocha mb-4">
+                Recommended Resources
+              </h2>
+
+              {resources.map((r) => (
+                <div key={r.id} className="flex justify-between items-center mb-2">
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-mocha underline truncate"
+                  >
+                    {r.title}
+                  </a>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteResource(r.id)}
+                      className="text-xs text-red-500"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {isAdmin && (
+                <div className="mt-4 space-y-2">
+                  <input
+                    placeholder="Title"
+                    value={newResourceTitle}
+                    onChange={(e) => setNewResourceTitle(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-xl"
+                  />
+                  <input
+                    placeholder="https://..."
+                    value={newResourceUrl}
+                    onChange={(e) => setNewResourceUrl(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-xl"
+                  />
+                  <button
+                    onClick={handleAddResource}
+                    className="w-full bg-peach px-4 py-2 rounded-xl"
+                  >
+                    {addingResource ? "Adding..." : "Add Resource"}
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* VIEWER */}
@@ -337,4 +386,5 @@ function ClassPage({ isAdmin }) {
 }
 
 export default ClassPage
+
 
