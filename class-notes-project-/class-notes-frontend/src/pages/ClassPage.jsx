@@ -137,6 +137,10 @@ function ClassPage({ isAdmin }) {
     }
   }
 
+  /* ===========================
+     DELETE DOCUMENT
+  =========================== */
+
   const handleDeleteDoc = async (docId) => {
     if (!isAdmin || !confirm("Delete this document?")) return
 
@@ -197,6 +201,25 @@ function ClassPage({ isAdmin }) {
   }
 
   /* ===========================
+     DELETE RESOURCE
+  =========================== */
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!isAdmin || !confirm("Delete this resource?")) return
+
+    try {
+      await fetch(`${API_URL}/resources/${resourceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      setResources((prev) => prev.filter((r) => r.id !== resourceId))
+    } catch (err) {
+      console.error("Delete resource error:", err)
+    }
+  }
+
+  /* ===========================
      RENDER
   =========================== */
 
@@ -210,6 +233,7 @@ function ClassPage({ isAdmin }) {
       />
 
       <div className="max-w-7xl mx-auto pl-24">
+
         {/* MAIN TITLE */}
         <h1 className="font-serifDisplay text-5xl text-mocha mb-6">
           {className}
@@ -281,6 +305,7 @@ function ClassPage({ isAdmin }) {
               </div>
             )}
 
+            {/* Search */}
             <input
               type="text"
               placeholder="Search..."
@@ -289,6 +314,7 @@ function ClassPage({ isAdmin }) {
               className="w-full mb-4 px-4 py-2 rounded-xl border border-sand"
             />
 
+            {/* Documents */}
             <div className="space-y-2">
               {documents.map((doc) => (
                 <div
@@ -296,7 +322,21 @@ function ClassPage({ isAdmin }) {
                   onClick={() => setSelectedDoc(doc)}
                   className="cursor-pointer px-4 py-3 rounded-xl hover:bg-sand"
                 >
-                  <span className="truncate text-sm">{doc.title}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="truncate text-sm">{doc.title}</span>
+
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteDoc(doc.id)
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -308,15 +348,27 @@ function ClassPage({ isAdmin }) {
               </h2>
 
               {resources.map((r) => (
-                <div key={r.id} className="mb-2">
+                <div
+                  key={r.id}
+                  className="flex justify-between items-center mb-2"
+                >
                   <a
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-mocha underline"
+                    className="text-sm text-mocha underline truncate"
                   >
                     {r.title}
                   </a>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteResource(r.id)}
+                      className="text-xs text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               ))}
 
