@@ -26,7 +26,7 @@ function Home({ isAdmin }) {
   ]
 
   const fetchClasses = async () => {
-    const res = await fetch('${API_URL}/classes')
+    const res = await fetch(`${API_URL}/classes`)
     const data = await res.json()
     setClasses(data)
   }
@@ -69,7 +69,7 @@ function Home({ isAdmin }) {
     if (!isAdmin) return
     if (!confirm("Delete this class?")) return
 
-    await fetch(`http://localhost:3001/classes/${id}`, {
+    await fetch(`${API_URL}/classes/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -86,7 +86,7 @@ function Home({ isAdmin }) {
   const handleSaveEdit = async (id) => {
     if (!isAdmin) return
 
-    const res = await fetch(`http://localhost:3001/classes/${id}`, {
+    const res = await fetch(`${API_URL}/classes${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
