@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom"
 import Home from "./pages/Home"
 import ClassPage from "./pages/ClassPage"
 import "./App.css"
-import API_URL from "../api"
+import API_URL from "./api"
 
 
 function App() {
