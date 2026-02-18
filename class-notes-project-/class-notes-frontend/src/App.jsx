@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom"
 import Home from "./pages/Home"
 import ClassPage from "./pages/ClassPage"
 import "./App.css"
+import API_URL from "../api"
+
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false)
@@ -19,7 +21,7 @@ function App() {
 
     if (!password) return
 
-    const res = await fetch("http://localhost:3001/auth/login", {
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password })
